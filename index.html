@@ -10,6 +10,17 @@
       margin: 0;
       height: 100%;
       background: #222;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    @supports (min-height: 100dvh) {
+      body {
+        min-height: 100dvh;
+      }
     }
 
     .pdf-frame {
@@ -17,6 +28,18 @@
       height: 100vh;
       border: 0;
       display: block;
+    }
+
+    @supports (height: 100dvh) {
+      .pdf-frame {
+        height: 100dvh;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .pdf-frame {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -27,5 +50,10 @@
   src="./Aissa_Portfolio_QR.pdf"
   title="Portfolio PDF">
 </iframe>
+  <script>
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      window.location.replace("./Aissa_Portfolio_QR.pdf");
+    }
+  </script>
 </body>
 </html>
