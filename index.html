@@ -22,96 +22,104 @@
       html,
       body {
         margin: 0;
-        height: 100%;
         background: #222;
         font-family: Arial, sans-serif;
       }
 
-      body {
-        min-height: 100vh;
+      .portfolio {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        width: min(100%, 1200px);
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
       }
 
-      @supports (min-height: 100dvh) {
-        body {
-          min-height: 100dvh;
-        }
-      }
-
-      .pdf-shell {
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        background: #222;
-      }
-
-      @supports (height: 100dvh) {
-        .pdf-shell {
-          height: 100dvh;
-        }
-      }
-
-      .pdf-loading {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        color: #ddd;
-        font-size: 1rem;
-        letter-spacing: 0.02em;
-      }
-
-      .pdf-viewer {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        border: 0;
+      .portfolio-page {
         display: block;
-        opacity: 0;
-        transition: opacity 180ms ease;
+        width: 100%;
+        height: auto;
+        box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
       }
 
-      .pdf-shell.is-loaded .pdf-viewer {
-        opacity: 1;
-      }
-
-      .pdf-shell.is-loaded .pdf-loading {
-        display: none;
+      .pdf-link {
+        align-self: center;
+        margin: 4px 0 12px;
+        color: #fff;
       }
     </style>
   </head>
 
   <body>
-    <!-- Update this filename when publishing a new portfolio PDF. -->
-    <script>
-      const portfolioPdfFilename = "Aissa_Portfolio_QR.18.April.26.pdf";
-      const portfolioPdf = `./${portfolioPdfFilename}`;
-      const isIos =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-
-      if (isIos) {
-        window.location.replace(portfolioPdf);
-      }
-    </script>
-    <div class="pdf-shell" aria-busy="true">
-      <div class="pdf-loading">Loading portfolio…</div>
-      <iframe
-        id="pdfViewer"
-        class="pdf-viewer"
-        title="Portfolio PDF"
-        allow="fullscreen"
+    <main class="portfolio">
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-1.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio cover"
+        class="portfolio-page"
         loading="eager"
-        onload="
-          this.parentElement.classList.add('is-loaded');
-          this.parentElement.removeAttribute('aria-busy');
-        "
-      >
-      </iframe>
-      <script>
-        if (!isIos) {
-          document.getElementById("pdfViewer").src = portfolioPdf;
-        }
-      </script>
-    </div>
+        fetchpriority="high"
+      />
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-2.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio page 2"
+        class="portfolio-page"
+        loading="lazy"
+        decoding="async"
+      />
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-3.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio page 3"
+        class="portfolio-page"
+        loading="lazy"
+        decoding="async"
+      />
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-4.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio page 4"
+        class="portfolio-page"
+        loading="lazy"
+        decoding="async"
+      />
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-5.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio page 5"
+        class="portfolio-page"
+        loading="lazy"
+        decoding="async"
+      />
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-6.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio page 6"
+        class="portfolio-page"
+        loading="lazy"
+        decoding="async"
+      />
+      <img
+        src="./web-assets/Aissa_Portfolio_QR.18.April.26-7.webp"
+        width="3508"
+        height="2480"
+        alt="Aïssa Dingenotto portfolio page 7"
+        class="portfolio-page"
+        loading="lazy"
+        decoding="async"
+      />
+
+      <a class="pdf-link" href="./Aissa_Portfolio_QR.18.April.26.pdf">
+        Open or download the PDF
+      </a>
+    </main>
   </body>
 </html>
