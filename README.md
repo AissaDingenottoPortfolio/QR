@@ -1,4 +1,4 @@
-# QR
+# Aïssa Dingenotto Portfolio
 
 Visit <https://aissadingenottoportfolio.github.io/QR/> to view the live site.
 
