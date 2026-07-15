@@ -85,6 +85,13 @@
     <script>
       const portfolioPdfFilename = "Aissa_Portfolio_QR.18.April.26.pdf";
       const portfolioPdf = `./${portfolioPdfFilename}`;
+      const isIos =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+      if (isIos) {
+        window.location.replace(portfolioPdf);
+      }
     </script>
     <div class="pdf-shell" aria-busy="true">
       <div class="pdf-loading">Loading portfolio…</div>
@@ -101,7 +108,9 @@
       >
       </iframe>
       <script>
-        document.getElementById("pdfViewer").src = portfolioPdf;
+        if (!isIos) {
+          document.getElementById("pdfViewer").src = portfolioPdf;
+        }
       </script>
     </div>
   </body>
