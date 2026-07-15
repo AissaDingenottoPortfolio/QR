@@ -66,6 +66,21 @@ if (!pageCountMatch) {
   fail("Could not determine the PDF page count.");
 }
 const pageCount = Number(pageCountMatch[1]);
+const detailedPdfInfo = execFileSync(
+  "pdfinfo",
+  ["-f", "1", "-l", String(pageCount), pdfPath],
+  { encoding: "utf8" },
+);
+const pageSizes = [...detailedPdfInfo.matchAll(
+  /^Page\s+\d+\s+size:\s+([\d.]+) x ([\d.]+) pts/mg,
+)].map((match) => ({
+  width: Math.round((Number(match[1]) / 72) * density),
+  height: Math.round((Number(match[2]) / 72) * density),
+}));
+if (pageSizes.length !== pageCount) {
+  fail("Could not determine every PDF page size.");
+}
+
 const assetPrefix = basename(pdfPath, extname(pdfPath))
   .replace(/[^A-Za-z0-9._-]+/g, "-")
   .replace(/^-+|-+$/g, "");
@@ -89,6 +104,7 @@ try {
     const temporaryPath = join(temporaryDirectory, filename);
     const pngPrefix = join(temporaryDirectory, `${assetPrefix}-${pageNumber}`);
     const pngPath = `${pngPrefix}.png`;
+    const targetSize = pageSizes[pageIndex];
 
     console.log(`  Page ${pageNumber}/${pageCount}`);
     execFileSync(
@@ -111,6 +127,9 @@ try {
       "magick",
       [
         pngPath,
+        "-crop",
+        `${targetSize.width}x${targetSize.height}+0+0`,
+        "+repage",
         "-background",
         "white",
         "-alpha",
@@ -134,8 +153,10 @@ try {
       { encoding: "utf8" },
     ).trim();
     const [width, height] = dimensions.split(/\s+/).map(Number);
-    if (!width || !height) {
-      fail(`Could not determine dimensions for page ${pageNumber}.`);
+    if (width !== targetSize.width || height !== targetSize.height) {
+      fail(
+        `Page ${pageNumber} has unexpected dimensions: ${width}x${height}; expected ${targetSize.width}x${targetSize.height}.`,
+      );
     }
 
     generatedAssets.push({ filename, temporaryPath, width, height });
