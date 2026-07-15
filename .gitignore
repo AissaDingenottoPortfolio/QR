@@ -1,2 +1,4 @@
 .mcp.json
 .codex
+node_modules/
+.tmp/
