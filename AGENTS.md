@@ -13,7 +13,8 @@ The repository owner may be non-technical. Complete routine portfolio updates wi
 
 - `index.html` — live page, analytics, styling, generated portfolio images, and PDF link.
 - `scripts/build-portfolio.mjs` — converts a selected PDF and updates `index.html`.
-- `package.json` — exposes the `npm run portfolio` command. There are no npm dependencies.
+- `scripts/serve.mjs` — runs the dependency-free local preview server on `http://localhost:8080/`.
+- `package.json` — exposes the `npm run portfolio` and `npm run preview` commands. There are no npm dependencies.
 - `web-assets/` — generated WebP page images.
 - `pdf-graveyard/` — archived superseded PDFs. Never publish one unless explicitly requested.
 - `README.md` — short human-facing update instructions.
@@ -38,6 +39,7 @@ When asked to update, replace, publish, or deploy the portfolio:
 
    The script:
    - renders every page at 300 DPI;
+   - crops each render to the PDF's mathematically rounded pixel dimensions, preventing Cairo's fractional one-pixel overflow line;
    - writes WebPs to `web-assets/`;
    - updates filenames, intrinsic dimensions, page count, and the PDF link in `index.html`;
    - removes obsolete WebPs referenced by the previous generated block.
@@ -60,6 +62,7 @@ At minimum:
 
 ```sh
 node --check scripts/build-portfolio.mjs
+node --check scripts/serve.mjs
 git diff --check
 ```
 
@@ -71,6 +74,8 @@ Also verify:
 - The first image uses eager loading and high fetch priority.
 - Remaining images use lazy loading and async decoding.
 - Generated images have non-zero dimensions and file sizes.
+- Their dimensions match the PDF page size rounded to pixels at 300 DPI; do not accept an extra Cairo overflow row or column.
+- Dark page edges do not contain a bright one-pixel line caused by fractional raster overflow.
 - `git status --short` contains only intended changes.
 
 Preview through the repository's cross-platform local server rather than opening `index.html` directly:
@@ -89,7 +94,7 @@ After generating the WebPs and updating `index.html`, use an available browser o
 - Capture at least the rendered cover. For a multi-page update, provide either one practical full-page screenshot or two to three viewport screenshots showing the top, a representative middle page, and the bottom/PDF link.
 - Include a mobile-width screenshot when the tooling supports viewport selection, because most visitors arrive by QR code on a phone.
 - Briefly label what each screenshot demonstrates and state the generated page count.
-- Screenshots are verification artifacts, not repository content. Prefer the browser tool's temporary storage or an operating-system temporary directory such as `/tmp/portfolio-preview-*`.
+- Screenshots are verification artifacts, not repository content. Prefer the browser tool's temporary storage or the operating system's temporary directory. Do not assume a Unix-style `/tmp` directory exists on Windows.
 - Never leave screenshot files or screenshot directories in this repository. If a tool can only write inside the repository, use a temporary directory, attach the images to the chat, delete the directory afterward, and confirm with `git status --short` that nothing remains.
 - If screenshot tooling is unavailable, say so plainly instead of claiming visual verification. Still report the automated validation results and give the user the local preview command.
 
@@ -100,10 +105,11 @@ Do not wait until after publishing to perform this check. The screenshots should
 Editing and validation do not automatically imply permission to push. If the user explicitly asks to **publish**, **deploy**, **push**, or **update the live site**, that is authorization to:
 
 1. Commit only the intended portfolio update files.
-2. Push the commit to `origin/main`.
-3. Explain that GitHub Pages may take a few minutes to refresh.
+2. If the environment permits direct publishing, push the commit to `origin/main`.
+3. If direct pushing is unavailable or the platform uses a review workflow, open a pull request targeting `main` and give the user its link. Explain that the live site will not change until the pull request is merged.
+4. After a successful push or merge, explain that GitHub Pages may take a few minutes to refresh.
 
-If the user only asks to prepare or update files, stop after validation and leave the changes uncommitted unless asked otherwise.
+Never describe an open but unmerged pull request as published. If the user only asks to prepare or update files, stop after validation and leave the changes uncommitted unless asked otherwise.
 
 ## Required local tools
 
@@ -141,6 +147,7 @@ Use platform-neutral Node/npm commands in instructions and quote PDF paths becau
 - Preserve the Google Analytics ID `G-B6FJZNFFW6` unless explicitly asked to change it.
 - Preserve the page title, favicon, responsive image sizing, lazy loading, and PDF download link.
 - Do not hand-edit generated WebPs.
+- Preserve the per-page rounded-dimension crop in `scripts/build-portfolio.mjs`; removing it reintroduces a visible one-pixel line along some dark page edges.
 - Do not delete archived PDFs.
 - Do not modify the source PDF’s contents.
 - Do not add a framework, bundler, or deployment workflow for a routine portfolio update.
