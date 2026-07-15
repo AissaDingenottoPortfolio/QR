@@ -33,7 +33,7 @@
       }
     }
 
-    .pdf-frame {
+    .pdf-viewer {
       width: 100%;
       height: 100vh;
       border: 0;
@@ -41,29 +41,22 @@
     }
 
     @supports (height: 100dvh) {
-      .pdf-frame {
+      .pdf-viewer {
         height: 100dvh;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .pdf-frame {
-        display: none;
       }
     }
   </style>
 </head>
 
 <body>
-  <!-- update the src attribute to new pdf filename -->
-  <iframe class="pdf-frame" src="./Aissa_Portfolio_QR.18.April.26.pdf" title="Portfolio PDF">
+  <!-- Update the file parameter when publishing a new portfolio PDF. -->
+  <iframe
+    class="pdf-viewer"
+    src="./pdfjs/web/viewer.html?file=../../Aissa_Portfolio_QR.18.April.26.pdf"
+    title="Portfolio PDF"
+    allow="fullscreen"
+  >
   </iframe>
-  <!-- update the window.location.replace("./newfile.pdf") to new pdf filename -->
-  <script>
-    if (window.matchMedia("(max-width: 768px)").matches) {
-      window.location.replace("./Aissa_Portfolio_QR.18.April.26.pdf");
-    }
-  </script>
 </body>
 
 </html>
