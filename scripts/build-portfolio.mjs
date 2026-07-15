@@ -37,7 +37,7 @@ function pathToUrl(value) {
 
 const pdfArgument = process.argv[2];
 if (!pdfArgument || process.argv.length > 3) {
-  fail("Usage: npm run portfolio -- path/to/portfolio.pdf");
+  fail("Usage: npm run generate -- path/to/portfolio.pdf");
 }
 
 const pdfPath = resolve(process.cwd(), pdfArgument);

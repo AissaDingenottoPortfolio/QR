@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "portfolio": "node scripts/build-portfolio.mjs",
+    "generate": "node scripts/build-portfolio.mjs",
     "preview": "node scripts/serve.mjs"
   }
 }

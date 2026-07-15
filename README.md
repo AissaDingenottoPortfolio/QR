@@ -64,7 +64,7 @@ The generator requires Node.js, Poppler (`pdfinfo` and `pdftocairo`), and ImageM
 Generate a portfolio:
 
 ```sh
-npm run portfolio -- "path/to/portfolio.pdf"
+npm run generate -- "path/to/portfolio.pdf"
 ```
 
 Preview it locally on Windows, macOS, or Linux:

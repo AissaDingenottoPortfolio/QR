@@ -14,7 +14,7 @@ The repository owner may be non-technical. Complete routine portfolio updates wi
 - `index.html` — live page, analytics, styling, generated portfolio images, and PDF link.
 - `scripts/build-portfolio.mjs` — converts a selected PDF and updates `index.html`.
 - `scripts/serve.mjs` — runs the dependency-free local preview server on `http://localhost:8080/`.
-- `package.json` — exposes the `npm run portfolio` and `npm run preview` commands. There are no npm dependencies.
+- `package.json` — exposes the `npm run generate` and `npm run preview` commands. There are no npm dependencies.
 - `web-assets/` — generated WebP page images.
 - `pdf-graveyard/` — archived superseded PDFs. Never publish one unless explicitly requested.
 - `README.md` — short human-facing update instructions.
@@ -34,7 +34,7 @@ When asked to update, replace, publish, or deploy the portfolio:
 4. Generate the site assets from the new PDF:
 
    ```sh
-   npm run portfolio -- "./Name of Portfolio.pdf"
+   npm run generate -- "./Name of Portfolio.pdf"
    ```
 
    The script:
