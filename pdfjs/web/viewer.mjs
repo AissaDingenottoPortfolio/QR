@@ -52,8 +52,7 @@
 /******/
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
-	/******/ __webpack_require__.o = (obj, prop) =>
-		Object.prototype.hasOwnProperty.call(obj, prop);
+	/******/ __webpack_require__.o = (obj, prop) => Object.hasOwn(obj, prop);
 	/******/
 })();
 /******/
@@ -138,7 +137,7 @@ function scrollIntoView(element, spot) {
 	parent.scrollTop = offsetY;
 }
 function watchScroll(viewAreaElement, callback, abortSignal = undefined) {
-	const debounceScroll = function (evt) {
+	const debounceScroll = (evt) => {
 		if (rAF) {
 			return;
 		}
@@ -386,7 +385,7 @@ function getVisibleElements({
 	const first = visible[0],
 		last = visible.at(-1);
 	if (sortByVisibility) {
-		visible.sort(function (a, b) {
+		visible.sort((a, b) => {
 			const pc = a.percent - b.percent;
 			if (Math.abs(pc) > 0.001) {
 				return -pc;
@@ -441,7 +440,7 @@ function isValidSpreadMode(mode) {
 function isPortraitOrientation(size) {
 	return size.width <= size.height;
 }
-const animationStarted = new Promise(function (resolve) {
+const animationStarted = new Promise((resolve) => {
 	window.requestAnimationFrame(resolve);
 });
 const docStyle = document.documentElement.style;
@@ -574,7 +573,7 @@ function toggleExpandedBtn(button, toggle, view = null) {
 	button.setAttribute("aria-expanded", toggle);
 	view?.classList.toggle("hidden", !toggle);
 }
-const calcRound = (function () {
+const calcRound = (() => {
 	const e = document.createElement("div");
 	e.style.width = "round(down, calc(1.6666666666666665 * 792px), 1px)";
 	return e.style.width === "calc(1320px)" ? Math.fround : (x) => x;
@@ -588,6 +587,13 @@ const calcRound = (function () {
 		(platform === "MacIntel" && maxTouchPoints > 1);
 	if (isIOS || isAndroid) {
 		compatParams.set("maxCanvasPixels", 5242880);
+	}
+	if (isIOS) {
+		// iPad/iPhone Safari can render PDF transparency/drop shadows as translucent boxes
+		// when PDF.js uses accelerated canvas/WebGPU paths. The raw PDF renders correctly
+		// in iOS Preview, so prefer the more conservative renderer on iOS devices.
+		compatParams.set("enableHWA", false);
+		compatParams.set("enableWebGPU", false);
 	}
 	if (isAndroid) {
 		compatParams.set("useSystemFonts", false);
@@ -972,17 +978,17 @@ class AppOptions {
 	static #opts = new Map();
 	static {
 		for (const name in defaultOptions) {
-			this.#opts.set(name, defaultOptions[name].value);
+			AppOptions.#opts.set(name, defaultOptions[name].value);
 		}
 		for (const [name, value] of compatParams) {
-			this.#opts.set(name, value);
+			AppOptions.#opts.set(name, value);
 		}
-		this._hasInvokedSet = false;
-		this._checkDisablePreferences = () => {
-			if (this.get("disablePreferences")) {
+		AppOptions._hasInvokedSet = false;
+		AppOptions._checkDisablePreferences = () => {
+			if (AppOptions.get("disablePreferences")) {
 				return true;
 			}
-			if (this._hasInvokedSet) {
+			if (AppOptions._hasInvokedSet) {
 				console.warn(
 					"The Preferences may override manually set AppOptions; " +
 						'please use the "disablePreferences"-option to prevent that.',
@@ -992,7 +998,7 @@ class AppOptions {
 		};
 	}
 	static get(name) {
-		return this.#opts.get(name);
+		return AppOptions.#opts.get(name);
 	}
 	static getAll(kind = null, defaultOnly = false) {
 		const options = Object.create(null);
@@ -1001,17 +1007,19 @@ class AppOptions {
 			if (kind && !(kind & defaultOpt.kind)) {
 				continue;
 			}
-			options[name] = !defaultOnly ? this.#opts.get(name) : defaultOpt.value;
+			options[name] = !defaultOnly
+				? AppOptions.#opts.get(name)
+				: defaultOpt.value;
 		}
 		return options;
 	}
 	static set(name, value) {
-		this.setAll({
+		AppOptions.setAll({
 			[name]: value,
 		});
 	}
 	static setAll(options, prefs = false) {
-		this._hasInvokedSet ||= true;
+		AppOptions._hasInvokedSet ||= true;
 		let events;
 		for (const name in options) {
 			const defaultOpt = defaultOptions[name],
@@ -1032,15 +1040,15 @@ class AppOptions {
 			) {
 				continue;
 			}
-			if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
+			if (AppOptions.eventBus && kind & OptionKind.EVENT_DISPATCH) {
 				(events ||= new Map()).set(name, userOpt);
 			}
-			this.#opts.set(name, userOpt);
+			AppOptions.#opts.set(name, userOpt);
 		}
 		if (events) {
 			for (const [name, value] of events) {
-				this.eventBus.dispatch(name.toLowerCase(), {
-					source: this,
+				AppOptions.eventBus.dispatch(name.toLowerCase(), {
+					source: AppOptions,
 					value,
 				});
 			}
@@ -1795,7 +1803,7 @@ function match(scope, selector, key) {
 		return true;
 	}
 	if (selector instanceof FluentNumber && typeof key === "string") {
-		let category = scope
+		const category = scope
 			.memoizeIntlObject(Intl.PluralRules, selector.opts)
 			.select(selector.value);
 		if (key === category) {
@@ -1851,15 +1859,12 @@ function resolveExpression(scope, expr) {
 function resolveVariableReference(scope, { name }) {
 	let arg;
 	if (scope.params) {
-		if (Object.prototype.hasOwnProperty.call(scope.params, name)) {
+		if (Object.hasOwn(scope.params, name)) {
 			arg = scope.params[name];
 		} else {
 			return new FluentNone(`$${name}`);
 		}
-	} else if (
-		scope.args &&
-		Object.prototype.hasOwnProperty.call(scope.args, name)
-	) {
+	} else if (scope.args && Object.hasOwn(scope.args, name)) {
 		arg = scope.args[name];
 	} else {
 		scope.reportError(new ReferenceError(`Unknown variable: $${name}`));
@@ -1928,7 +1933,7 @@ function resolveTermReference(scope, { name, attr, args }) {
 	return resolved;
 }
 function resolveFunctionReference(scope, { name, args }) {
-	let func = scope.bundle._functions[name];
+	const func = scope.bundle._functions[name];
 	if (!func) {
 		scope.reportError(new ReferenceError(`Unknown function: ${name}()`));
 		return new FluentNone(`${name}()`);
@@ -1938,7 +1943,7 @@ function resolveFunctionReference(scope, { name, args }) {
 		return new FluentNone(`${name}()`);
 	}
 	try {
-		let resolved = getArguments(scope, args);
+		const resolved = getArguments(scope, args);
 		return func(resolved.positional, resolved.named);
 	} catch (err) {
 		scope.reportError(err);
@@ -1946,7 +1951,7 @@ function resolveFunctionReference(scope, { name, args }) {
 	}
 }
 function resolveSelectExpression(scope, { selector, variants, star }) {
-	let sel = resolveExpression(scope, selector);
+	const sel = resolveExpression(scope, selector);
 	if (sel instanceof FluentNone) {
 		return getDefault(scope, variants, star);
 	}
@@ -2017,7 +2022,7 @@ class Scope {
 			cache = {};
 			this.bundle._intls.set(ctor, cache);
 		}
-		let id = JSON.stringify(opts);
+		const id = JSON.stringify(opts);
 		if (!cache[id]) {
 			cache[id] = new ctor(this.bundle.locales, opts);
 		}
@@ -2045,7 +2050,7 @@ const NUMBER_ALLOWED = [
 	"maximumSignificantDigits",
 ];
 function NUMBER(args, opts) {
-	let arg = args[0];
+	const arg = args[0];
 	if (arg instanceof FluentNone) {
 		return new FluentNone(`NUMBER(${arg.valueOf()})`);
 	}
@@ -2079,7 +2084,7 @@ const DATETIME_ALLOWED = [
 	"timeZoneName",
 ];
 function DATETIME(args, opts) {
-	let arg = args[0];
+	const arg = args[0];
 	if (arg instanceof FluentNone) {
 		return new FluentNone(`DATETIME(${arg.valueOf()})`);
 	}
@@ -2125,7 +2130,7 @@ class FluentBundle {
 	addResource(res, { allowOverrides = false } = {}) {
 		const errors = [];
 		for (let i = 0; i < res.body.length; i++) {
-			let entry = res.body[i];
+			const entry = res.body[i];
 			if (entry.id.startsWith("-")) {
 				if (allowOverrides === false && this._terms.has(entry.id)) {
 					errors.push(
@@ -2150,9 +2155,9 @@ class FluentBundle {
 		if (typeof pattern === "string") {
 			return this._transform(pattern);
 		}
-		let scope = new Scope(this, errors, args);
+		const scope = new Scope(this, errors, args);
 		try {
-			let value = resolveComplexPattern(scope, pattern);
+			const value = resolveComplexPattern(scope, pattern);
 			return value.toString(scope);
 		} catch (err) {
 			if (scope.errors && err instanceof Error) {
@@ -2193,7 +2198,7 @@ class FluentResource {
 		RE_MESSAGE_START.lastIndex = 0;
 		let cursor = 0;
 		while (true) {
-			let next = RE_MESSAGE_START.exec(source);
+			const next = RE_MESSAGE_START.exec(source);
 			if (next === null) {
 				break;
 			}
@@ -2233,7 +2238,7 @@ class FluentResource {
 		}
 		function match(re) {
 			re.lastIndex = cursor;
-			let result = re.exec(source);
+			const result = re.exec(source);
 			if (result === null) {
 				throw new SyntaxError(`Expected ${re.toString()}`);
 			}
@@ -2244,8 +2249,8 @@ class FluentResource {
 			return match(re)[1];
 		}
 		function parseMessage(id) {
-			let value = parsePattern();
-			let attributes = parseAttributes();
+			const value = parsePattern();
+			const attributes = parseAttributes();
 			if (value === null && Object.keys(attributes).length === 0) {
 				throw new SyntaxError("Expected message value or attributes");
 			}
@@ -2256,10 +2261,10 @@ class FluentResource {
 			};
 		}
 		function parseAttributes() {
-			let attrs = Object.create(null);
+			const attrs = Object.create(null);
 			while (test(RE_ATTRIBUTE_START)) {
-				let name = match1(RE_ATTRIBUTE_START);
-				let value = parsePattern();
+				const name = match1(RE_ATTRIBUTE_START);
+				const value = parsePattern();
 				if (value === null) {
 					throw new SyntaxError("Expected attribute value");
 				}
@@ -2275,7 +2280,7 @@ class FluentResource {
 			if (source[cursor] === "{" || source[cursor] === "}") {
 				return parsePatternElements(first ? [first] : [], Infinity);
 			}
-			let indent = parseIndent();
+			const indent = parseIndent();
 			if (indent) {
 				if (first) {
 					return parsePatternElements([first, indent], indent.length);
@@ -2301,7 +2306,7 @@ class FluentResource {
 				if (source[cursor] === "}") {
 					throw new SyntaxError("Unbalanced closing brace");
 				}
-				let indent = parseIndent();
+				const indent = parseIndent();
 				if (indent) {
 					elements.push(indent);
 					commonIndent = Math.min(commonIndent, indent.length);
@@ -2309,12 +2314,12 @@ class FluentResource {
 				}
 				break;
 			}
-			let lastIndex = elements.length - 1;
-			let lastElement = elements[lastIndex];
+			const lastIndex = elements.length - 1;
+			const lastElement = elements[lastIndex];
 			if (typeof lastElement === "string") {
 				elements[lastIndex] = trim(lastElement, RE_TRAILING_SPACES);
 			}
-			let baked = [];
+			const baked = [];
 			for (let element of elements) {
 				if (element instanceof Indent) {
 					element = element.value.slice(0, element.value.length - commonIndent);
@@ -2327,12 +2332,12 @@ class FluentResource {
 		}
 		function parsePlaceable() {
 			consumeToken(TOKEN_BRACE_OPEN, SyntaxError);
-			let selector = parseInlineExpression();
+			const selector = parseInlineExpression();
 			if (consumeToken(TOKEN_BRACE_CLOSE)) {
 				return selector;
 			}
 			if (consumeToken(TOKEN_ARROW)) {
-				let variants = parseVariants();
+				const variants = parseVariants();
 				consumeToken(TOKEN_BRACE_CLOSE, SyntaxError);
 				return {
 					type: "select",
@@ -2347,7 +2352,7 @@ class FluentResource {
 				return parsePlaceable();
 			}
 			if (test(RE_REFERENCE)) {
-				let [, sigil, name, attr = null] = match(RE_REFERENCE);
+				const [, sigil, name, attr = null] = match(RE_REFERENCE);
 				if (sigil === "$") {
 					return {
 						type: "var",
@@ -2355,7 +2360,7 @@ class FluentResource {
 					};
 				}
 				if (consumeToken(TOKEN_PAREN_OPEN)) {
-					let args = parseArguments();
+					const args = parseArguments();
 					if (sigil === "-") {
 						return {
 							type: "term",
@@ -2390,7 +2395,7 @@ class FluentResource {
 			return parseLiteral();
 		}
 		function parseArguments() {
-			let args = [];
+			const args = [];
 			while (true) {
 				switch (source[cursor]) {
 					case ")":
@@ -2404,7 +2409,7 @@ class FluentResource {
 			}
 		}
 		function parseArgument() {
-			let expr = parseInlineExpression();
+			const expr = parseInlineExpression();
 			if (expr.type !== "mesg") {
 				return expr;
 			}
@@ -2418,15 +2423,15 @@ class FluentResource {
 			return expr;
 		}
 		function parseVariants() {
-			let variants = [];
+			const variants = [];
 			let count = 0;
 			let star;
 			while (test(RE_VARIANT_START)) {
 				if (consumeChar("*")) {
 					star = count;
 				}
-				let key = parseVariantKey();
-				let value = parsePattern();
+				const key = parseVariantKey();
+				const value = parsePattern();
 				if (value === null) {
 					throw new SyntaxError("Expected variant value");
 				}
@@ -2470,8 +2475,8 @@ class FluentResource {
 			throw new SyntaxError("Invalid expression");
 		}
 		function parseNumberLiteral() {
-			let [, value, fraction = ""] = match(RE_NUMBER_LITERAL);
-			let precision = fraction.length;
+			const [, value, fraction = ""] = match(RE_NUMBER_LITERAL);
+			const precision = fraction.length;
 			return {
 				type: "num",
 				value: parseFloat(value),
@@ -2501,8 +2506,8 @@ class FluentResource {
 				return match1(RE_STRING_ESCAPE);
 			}
 			if (test(RE_UNICODE_ESCAPE)) {
-				let [, codepoint4, codepoint6] = match(RE_UNICODE_ESCAPE);
-				let codepoint = parseInt(codepoint4 || codepoint6, 16);
+				const [, codepoint4, codepoint6] = match(RE_UNICODE_ESCAPE);
+				const codepoint = parseInt(codepoint4 || codepoint6, 16);
 				return codepoint <= 0xd7ff || 0xe000 <= codepoint
 					? String.fromCodePoint(codepoint)
 					: "�";
@@ -2510,7 +2515,7 @@ class FluentResource {
 			throw new SyntaxError("Unknown escape sequence");
 		}
 		function parseIndent() {
-			let start = cursor;
+			const start = cursor;
 			consumeToken(TOKEN_BLANK);
 			switch (source[cursor]) {
 				case ".":
@@ -2531,8 +2536,8 @@ class FluentResource {
 			return text.replace(re, "");
 		}
 		function makeIndent(blank) {
-			let value = blank.replace(RE_BLANK_LINES, "\n");
-			let length = RE_INDENT.exec(blank)[1].length;
+			const value = blank.replace(RE_BLANK_LINES, "\n");
+			const length = RE_INDENT.exec(blank)[1].length;
 			return new Indent(value, length);
 		}
 	}
@@ -2656,7 +2661,7 @@ function hasAttribute(attributes, name) {
 	if (!attributes) {
 		return false;
 	}
-	for (let attr of attributes) {
+	for (const attr of attributes) {
 		if (attr.name === name) {
 			return true;
 		}
@@ -2760,7 +2765,7 @@ function shallowPopulateUsing(fromElement, toElement) {
 } // ./node_modules/cached-iterable/src/cached_iterable.mjs
 class CachedIterable extends Array {
 	static from(iterable) {
-		if (iterable instanceof this) {
+		if (iterable instanceof CachedIterable) {
 			return iterable;
 		}
 		return new this(iterable);
@@ -2916,11 +2921,15 @@ function messageFromBundle(bundle, errors, message, args) {
 	if (message.value) {
 		formatted.value = bundle.formatPattern(message.value, args, errors);
 	}
-	let attrNames = Object.keys(message.attributes);
+	const attrNames = Object.keys(message.attributes);
 	if (attrNames.length > 0) {
 		formatted.attributes = new Array(attrNames.length);
-		for (let [i, name] of attrNames.entries()) {
-			let value = bundle.formatPattern(message.attributes[name], args, errors);
+		for (const [i, name] of attrNames.entries()) {
+			const value = bundle.formatPattern(
+				message.attributes[name],
+				args,
+				errors,
+			);
 			formatted.attributes[i] = {
 				name,
 				value,
@@ -2936,7 +2945,7 @@ function keysFromBundle(method, bundle, keys, translations) {
 		if (translations[i] !== undefined) {
 			return;
 		}
-		let message = bundle.getMessage(id);
+		const message = bundle.getMessage(id);
 		if (message) {
 			messageErrors.length = 0;
 			translations[i] = method(bundle, messageErrors, message, args);
@@ -3262,7 +3271,7 @@ class genericl10n_GenericL10n extends L10n {
 		this._setL10n(new DOMLocalization([], generateBundles));
 	}
 	static async *#generateBundles(defaultLang, baseLang) {
-		const { baseURL, paths } = await this.#getPaths();
+		const { baseURL, paths } = await genericl10n_GenericL10n.#getPaths();
 		const langs = [baseLang];
 		if (defaultLang !== baseLang) {
 			const shortLang = baseLang.split("-", 1)[0];
@@ -3273,14 +3282,14 @@ class genericl10n_GenericL10n extends L10n {
 		}
 		const bundles = langs.map((lang) => [
 			lang,
-			this.#createBundle(lang, baseURL, paths),
+			genericl10n_GenericL10n.#createBundle(lang, baseURL, paths),
 		]);
 		for (const [lang, bundlePromise] of bundles) {
 			const bundle = await bundlePromise;
 			if (bundle) {
 				yield bundle;
 			} else if (lang === "en-us") {
-				yield this.#createBundleFallback(lang);
+				yield genericl10n_GenericL10n.#createBundleFallback(lang);
 			}
 		}
 	}
@@ -3308,7 +3317,7 @@ class genericl10n_GenericL10n extends L10n {
 		};
 	}
 	static async *#generateBundlesFallback(lang) {
-		yield this.#createBundleFallback(lang);
+		yield genericl10n_GenericL10n.#createBundleFallback(lang);
 	}
 	static async #createBundleFallback(lang) {
 		const text =
@@ -4932,7 +4941,7 @@ class CommentManager {
 		return CommentManager._makeCommentColor(color, opacity);
 	}
 	static _makeCommentColor(color, opacity) {
-		return this.#hasForcedColors
+		return CommentManager.#hasForcedColors
 			? null
 			: findContrastColor(
 					applyOpacity(color, opacity ?? 1),
@@ -7428,7 +7437,7 @@ class PDFFindController {
 			return true;
 		}
 		switch (state.type) {
-			case "again":
+			case "again": {
 				const pageNumber = this._selected.pageIdx + 1;
 				const linkService = this._linkService;
 				return (
@@ -7437,6 +7446,7 @@ class PDFFindController {
 					pageNumber !== linkService.page &&
 					!(this.onIsPageVisible?.(pageNumber) ?? true)
 				);
+			}
 			case "highlightallchange":
 				return false;
 		}
@@ -9227,7 +9237,7 @@ class PDFPresentationMode {
 				this.touchSwipeState.endY = evt.touches[0].pageY;
 				evt.preventDefault();
 				break;
-			case "touchend":
+			case "touchend": {
 				if (this.touchSwipeState === null) {
 					return;
 				}
@@ -9253,6 +9263,7 @@ class PDFPresentationMode {
 					this.pdfViewer.nextPage();
 				}
 				break;
+			}
 		}
 	}
 	#addWindowListeners() {
@@ -9442,7 +9453,7 @@ function renderPage(
 	return Promise.all([
 		pdfDocument.getPage(pageNumber),
 		printAnnotationStoragePromise,
-	]).then(function ([pdfPage, printAnnotationStorage]) {
+	]).then(([pdfPage, printAnnotationStorage]) => {
 		const renderContext = {
 			canvas: scratchCanvas,
 			transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
@@ -9521,7 +9532,7 @@ class PDFPrintService {
 		this.scratchCanvas.width = this.scratchCanvas.height = 0;
 		this.scratchCanvas = null;
 		activeService = null;
-		ensureOverlay().then(function () {
+		ensureOverlay().then(() => {
 			overlayManager.closeIfActive(dialog);
 		});
 	}
@@ -9550,7 +9561,7 @@ class PDFPrintService {
 				this._printAnnotationStoragePromise,
 			)
 				.then(this.useRenderedPage.bind(this))
-				.then(function () {
+				.then(() => {
 					renderNextPage(resolve, reject);
 				}, reject);
 		};
@@ -9597,12 +9608,12 @@ class PDFPrintService {
 	}
 }
 const print = window.print;
-window.print = function () {
+window.print = () => {
 	if (activeService) {
 		console.warn("Ignored window.print() because of a pending print job.");
 		return;
 	}
-	ensureOverlay().then(function () {
+	ensureOverlay().then(() => {
 		if (activeService) {
 			overlayManager.open(dialog);
 		}
@@ -9612,7 +9623,7 @@ window.print = function () {
 	} finally {
 		if (!activeService) {
 			console.error("Expected print service to be initialized.");
-			ensureOverlay().then(function () {
+			ensureOverlay().then(() => {
 				overlayManager.closeIfActive(dialog);
 			});
 		} else {
@@ -9658,7 +9669,7 @@ function renderProgress(index, total) {
 }
 window.addEventListener(
 	"keydown",
-	function (event) {
+	(event) => {
 		if (
 			event.keyCode === 80 &&
 			(event.ctrlKey || event.metaKey) &&
@@ -9673,7 +9684,7 @@ window.addEventListener(
 	true,
 );
 if ("onbeforeprint" in window) {
-	const stopPropagationIfNeeded = function (event) {
+	const stopPropagationIfNeeded = (event) => {
 		if (event.detail !== "custom") {
 			event.stopImmediatePropagation();
 		}
@@ -9700,7 +9711,7 @@ class PDFPrintServiceFactory extends BasePrintServiceFactory {
 		viewerApp = app;
 	}
 	static get supportsPrinting() {
-		return shadow(this, "supportsPrinting", true);
+		return shadow(PDFPrintServiceFactory, "supportsPrinting", true);
 	}
 	static createPrintService(params) {
 		if (activeService) {
@@ -10363,7 +10374,7 @@ class Menu {
 							?.focus();
 						stopEvent(e);
 						break;
-					default:
+					default: {
 						const { key } = e;
 						if (!/^\p{L}$/u.test(key)) {
 							break;
@@ -10374,6 +10385,7 @@ class Menu {
 						);
 						stopEvent(e);
 						break;
+					}
 				}
 			},
 			{
@@ -12769,12 +12781,12 @@ class Autolinker {
 	static #regex;
 	static #numericTLDRegex;
 	static findLinks(text) {
-		this.#regex ??=
+		Autolinker.#regex ??=
 			/\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|(?=\p{L})[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[[\p{P}--\-]<>]]+(?:\.[\S--[[\p{P}--\-]<>]]+)+)/gmv;
 		const [normalizedText, diffs] = normalize(text, {
 			ignoreDashEOL: true,
 		});
-		const matches = normalizedText.matchAll(this.#regex);
+		const matches = normalizedText.matchAll(Autolinker.#regex);
 		const links = [];
 		for (const match of matches) {
 			const [url, emailDomain] = match;
@@ -12790,8 +12802,8 @@ class Autolinker {
 				if (!hostname) {
 					continue;
 				}
-				this.#numericTLDRegex ??= /\.\d+$/;
-				if (this.#numericTLDRegex.test(hostname)) {
+				Autolinker.#numericTLDRegex ??= /\.\d+$/;
+				if (Autolinker.#numericTLDRegex.test(hostname)) {
 					continue;
 				}
 			}
@@ -12815,9 +12827,11 @@ class Autolinker {
 		return links;
 	}
 	static processLinks(pdfPageView) {
-		return this.findLinks(
+		return Autolinker.findLinks(
 			pdfPageView._textHighlighter.textContentItemsStr.join("\n"),
-		).map((link) => createLinkAnnotation(link, pdfPageView, this.#index++));
+		).map((link) =>
+			createLinkAnnotation(link, pdfPageView, Autolinker.#index++),
+		);
 	}
 } // ./web/base_pdf_page_view.js
 
@@ -13337,7 +13351,7 @@ const MathMLNamespace = "http://www.w3.org/1998/Math/MathML";
 class MathMLSanitizer {
 	static get sanitizer() {
 		return shadow(
-			this,
+			MathMLSanitizer,
 			"sanitizer",
 			FeatureTest.isSanitizerSupported
 				? new Sanitizer({
@@ -14098,23 +14112,23 @@ class TextLayerBuilder {
 		TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
 	}
 	static #removeGlobalSelectionListener(textLayerDiv) {
-		this.#textLayers.delete(textLayerDiv);
-		if (this.#textLayers.size === 0) {
-			this.#selectionChangeAbortController?.abort();
-			this.#selectionChangeAbortController = null;
+		TextLayerBuilder.#textLayers.delete(textLayerDiv);
+		if (TextLayerBuilder.#textLayers.size === 0) {
+			TextLayerBuilder.#selectionChangeAbortController?.abort();
+			TextLayerBuilder.#selectionChangeAbortController = null;
 		}
 	}
 	static #enableGlobalSelectionListener(globalAbortSignal) {
-		if (this.#selectionChangeAbortController) {
+		if (TextLayerBuilder.#selectionChangeAbortController) {
 			return;
 		}
-		this.#selectionChangeAbortController = new AbortController();
+		TextLayerBuilder.#selectionChangeAbortController = new AbortController();
 		const signal = globalAbortSignal
 			? AbortSignal.any([
-					this.#selectionChangeAbortController.signal,
+					TextLayerBuilder.#selectionChangeAbortController.signal,
 					globalAbortSignal,
 				])
-			: this.#selectionChangeAbortController.signal;
+			: TextLayerBuilder.#selectionChangeAbortController.signal;
 		const reset = (end, textLayer) => {
 			textLayer.append(end);
 			end.style.width = "";
@@ -14135,7 +14149,7 @@ class TextLayerBuilder {
 			"pointerup",
 			() => {
 				isPointerDown = false;
-				this.#textLayers.forEach(reset);
+				TextLayerBuilder.#textLayers.forEach(reset);
 			},
 			{
 				signal,
@@ -14145,7 +14159,7 @@ class TextLayerBuilder {
 			"blur",
 			() => {
 				isPointerDown = false;
-				this.#textLayers.forEach(reset);
+				TextLayerBuilder.#textLayers.forEach(reset);
 			},
 			{
 				signal,
@@ -14155,7 +14169,7 @@ class TextLayerBuilder {
 			"keyup",
 			() => {
 				if (!isPointerDown) {
-					this.#textLayers.forEach(reset);
+					TextLayerBuilder.#textLayers.forEach(reset);
 				}
 			},
 			{
@@ -14168,13 +14182,13 @@ class TextLayerBuilder {
 			() => {
 				const selection = document.getSelection();
 				if (selection.rangeCount === 0) {
-					this.#textLayers.forEach(reset);
+					TextLayerBuilder.#textLayers.forEach(reset);
 					return;
 				}
 				const activeTextLayers = new Set();
 				for (let i = 0; i < selection.rangeCount; i++) {
 					const range = selection.getRangeAt(i);
-					for (const textLayerDiv of this.#textLayers.keys()) {
+					for (const textLayerDiv of TextLayerBuilder.#textLayers.keys()) {
 						if (
 							!activeTextLayers.has(textLayerDiv) &&
 							range.intersectsNode(textLayerDiv)
@@ -14183,7 +14197,7 @@ class TextLayerBuilder {
 						}
 					}
 				}
-				for (const [textLayerDiv, endDiv] of this.#textLayers) {
+				for (const [textLayerDiv, endDiv] of TextLayerBuilder.#textLayers) {
 					if (activeTextLayers.has(textLayerDiv)) {
 						textLayerDiv.classList.add("selecting");
 					} else {
@@ -14192,7 +14206,7 @@ class TextLayerBuilder {
 				}
 				isFirefox ??=
 					getComputedStyle(
-						this.#textLayers.values().next().value,
+						TextLayerBuilder.#textLayers.values().next().value,
 					).getPropertyValue("-moz-user-select") === "none";
 				if (isFirefox) {
 					return;
@@ -14218,7 +14232,7 @@ class TextLayerBuilder {
 					} while (!anchor.childNodes.length);
 				}
 				const parentTextLayer = anchor.parentElement?.closest(".textLayer");
-				const endDiv = this.#textLayers.get(parentTextLayer);
+				const endDiv = TextLayerBuilder.#textLayers.get(parentTextLayer);
 				if (endDiv) {
 					endDiv.style.width = parentTextLayer.style.width;
 					endDiv.style.height = parentTextLayer.style.height;
@@ -16321,12 +16335,13 @@ class PDFViewer {
 				case "page-fit":
 					scale = Math.min(pageWidthScale, pageHeightScale);
 					break;
-				case "auto":
+				case "auto": {
 					const horizontalScale = isPortraitOrientation(currentPage)
 						? pageWidthScale
 						: Math.min(pageHeightScale, pageWidthScale);
 					scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
 					break;
+				}
 				default:
 					console.error(`#setScale: "${value}" is an unknown zoom value.`);
 					return;
@@ -16422,7 +16437,7 @@ class PDFViewer {
 				height = pageHeight;
 				scale = "page-height";
 				break;
-			case "FitR":
+			case "FitR": {
 				x = destArray[2];
 				y = destArray[3];
 				width = destArray[4] - x;
@@ -16442,6 +16457,7 @@ class PDFViewer {
 					PixelsPerInch.PDF_TO_CSS_UNITS;
 				scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
 				break;
+			}
 			default:
 				console.error(
 					`scrollPageIntoView: "${destArray[1].name}" is not a valid destination type.`,
@@ -19756,7 +19772,7 @@ const PDFViewerApplication = {
 				fileInput: evt.target,
 			});
 		});
-		appConfig.mainContainer.addEventListener("dragover", function (evt) {
+		appConfig.mainContainer.addEventListener("dragover", (evt) => {
 			for (const item of evt.dataTransfer.items) {
 				if (item.type === "application/pdf") {
 					evt.dataTransfer.dropEffect =
@@ -20305,7 +20321,7 @@ const PDFViewerApplication = {
 				.catch(() => {
 					this.setInitialView();
 				})
-				.then(function () {
+				.then(() => {
 					pdfViewer.update();
 				});
 		});
@@ -21032,7 +21048,7 @@ PDFPrintServiceFactory.initGlobals(PDFViewerApplication);
 		"http://mozilla.github.io",
 		"https://mozilla.github.io",
 	]);
-	var validateFileURL = function (file) {
+	var validateFileURL = (file) => {
 		if (!file) {
 			return;
 		}

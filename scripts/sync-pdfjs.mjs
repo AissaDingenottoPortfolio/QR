@@ -24,6 +24,16 @@ const zipPath = join(tmpDir, `pdfjs-${version}-dist.zip`);
 const extractDir = join(tmpDir, "extract");
 const targetDir = join(root, "pdfjs");
 
+async function patchViewerForIosRendering(viewerPath) {
+	const original = `  if (isIOS || isAndroid) {\n    compatParams.set("maxCanvasPixels", 5242880);\n  }\n  if (isAndroid) {\n    compatParams.set("useSystemFonts", false);\n  }\n`;
+	const patched = `  if (isIOS || isAndroid) {\n    compatParams.set("maxCanvasPixels", 5242880);\n  }\n  if (isIOS) {\n    // iPad/iPhone Safari can render PDF transparency/drop shadows as translucent boxes\n    // when PDF.js uses accelerated canvas/WebGPU paths. The raw PDF renders correctly\n    // in iOS Preview, so prefer the more conservative renderer on iOS devices.\n    compatParams.set("enableHWA", false);\n    compatParams.set("enableWebGPU", false);\n  }\n  if (isAndroid) {\n    compatParams.set("useSystemFonts", false);\n  }\n`;
+	const viewer = await readFile(viewerPath, "utf8");
+	if (!viewer.includes(original)) {
+		throw new Error("Could not find PDF.js iOS compatibility block to patch");
+	}
+	await writeFile(viewerPath, viewer.replace(original, patched));
+}
+
 process.stdout.write(`Downloading PDF.js ${version}\n`);
 process.stdout.write(`${url}\n`);
 
@@ -63,6 +73,8 @@ await Promise.all([
 		force: true,
 	}),
 ]);
+
+await patchViewerForIosRendering(join(targetDir, "web", "viewer.mjs"));
 
 await writeFile(
 	join(targetDir, "VERSION"),
