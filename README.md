@@ -4,11 +4,40 @@ Visit <https://aissadingenottoportfolio.github.io/QR/> to view the live site.
 
 ## Updating the portfolio
 
-1. Replace `Aissa_Portfolio_QR.18.April.26.pdf` with the new PDF export.
-2. Export each PDF page as WebP and replace the files in `web-assets/`.
-3. If filenames or the page count change, update the image list and PDF link in `index.html`.
-4. Test locally with a static server, for example:
+The build script requires Node.js, Poppler (`pdfinfo` and `pdftocairo`), and ImageMagick (`magick`). It has no npm package dependencies.
 
-   ```sh
-   python3 -m http.server 8080
-   ```
+Install the required tools if they are not already available:
+
+```sh
+# Ubuntu/Debian
+sudo apt install nodejs npm poppler-utils imagemagick
+
+# macOS
+brew install node poppler imagemagick
+```
+
+On Windows, open PowerShell and run:
+
+```powershell
+winget install --exact --id OpenJS.NodeJS.LTS
+winget install --exact --id oschwartz10612.Poppler
+winget install --exact --id ImageMagick.ImageMagick
+```
+
+Close and reopen the terminal after installing so the new commands are available.
+
+To publish any PDF stored in this repository:
+
+```sh
+npm run portfolio -- "path/to/portfolio.pdf"
+```
+
+The script converts every page to a 300 DPI WebP in `web-assets/`, updates the generated image list and PDF link in `index.html`, and removes images referenced by the previous generated list. Do not remove the `portfolio:start` and `portfolio:end` comments from `index.html`.
+
+Preview the site locally on Windows, macOS, or Linux:
+
+```sh
+npm run preview
+```
+
+Then open <http://localhost:8080/>. Press `Ctrl+C` in the terminal to stop the preview server.

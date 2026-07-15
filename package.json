@@ -1,0 +1,9 @@
+{
+  "name": "aissa-dingenotto-portfolio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "portfolio": "node scripts/build-portfolio.mjs",
+    "preview": "node scripts/serve.mjs"
+  }
+}
